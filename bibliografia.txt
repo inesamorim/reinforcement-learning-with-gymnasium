@@ -1,0 +1,10 @@
+
+> https://youtu.be/woER6NfHGwQ   sample size 8
+
+> https://smythos.com/machine-learning/reinforcement-learning/reinforcement-learning-openai-gym/
+
+> https://youtu.be/i7q8bISGwMQ
+
+> https://notanymike.github.io/Solving-CarRacing/    -> PPO
+
+> https://sarthdubey.in/Reinforcement_Learning/Sections/005_Anatomy_OpenAI.html
