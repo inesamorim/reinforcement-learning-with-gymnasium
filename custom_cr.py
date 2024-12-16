@@ -1,5 +1,5 @@
-import gym
-from gym.envs.box2d.car_racing import CarRacing
+import gymnasium as gym
+from gymnasium.envs.box2d.car_racing import CarRacing
 import numpy as np
 
 '''
@@ -33,9 +33,9 @@ class CustomCarRacing(CarRacing):
         return obstacles
 
     def modify_track_features(self):
-		self.track_curvature = random.uniform(0.5, 1.5)
-		self.track_width = random.uniform(1.0, 2.5)
-    	self.track_length = random.uniform(100.0, 400.0)
+		self.track_curvature = np.random.uniform(0.5, 1.5)
+		self.track_width = np.random.uniform(1.0, 2.5)
+    	self.track_length = np.random.uniform(100.0, 400.0)
 
     def step(self, action):
         state, reward, done, info = super().step(action)
