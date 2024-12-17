@@ -29,13 +29,13 @@ class CustomCarRacing(CarRacing):
             x = np.random.uniform(-1.0, 1.0) #ajustar limites 
             y = np.random.uniform(-1.0, 1.0)
             if self.is_on_track((x,y)): #obstacles apenas na track
-            	obstacles.append((x, y))
+                obstacles.append((x, y))
         return obstacles
 
     def modify_track_features(self):
-		self.track_curvature = np.random.uniform(0.5, 1.5)
-		self.track_width = np.random.uniform(1.0, 2.5)
-    	self.track_length = np.random.uniform(100.0, 400.0)
+        self.track_curvature = np.random.uniform(0.5, 1.5)
+        self.track_width = np.random.uniform(1.0, 2.5)
+        self.track_length = np.random.uniform(100.0, 400.0)
 
     def step(self, action):
         state, reward, done, info = super().step(action)
@@ -61,14 +61,13 @@ class CustomCarRacing(CarRacing):
         img = self.render(mode='rgb_array')
 
         if 0 <= pixel_x < img.shape[1] and 0 <= pixel_y < img.shape[0]:
-        	pixel_color = img[pixel_y, pixel_x]
-
-        	green_min = np.array([0, 150, 0])
-        	green_max = np.array([100, 255, 100])
-
-       		if np.all(pixel_color >= green_min) and np.all(pixel_color <= green_max):
-            	return False  #on the grass = outside the track
-        	return True
+            pixel_color = img[pixel_y, pixel_x]
+            green_min = np.array([0, 150, 0])
+            green_max = np.array([100, 255, 100])
+            
+            if np.all(pixel_color >= green_min) and np.all(pixel_color <= green_max):
+                return False  #on the grass = outside the track
+            return True
 
         return False
 
@@ -76,7 +75,7 @@ class CustomCarRacing(CarRacing):
         current_position = np.array([state[0], state[1]])
 
         if self.previous_position is None:
-        	self.previous_position = current_position
+            self.previous_position = current_position
             return 0.0
 
         distance_traveled = np.linalg.norm(current_position - self.previous_position)
