@@ -19,14 +19,22 @@ Ex: finished in 732 frames, reward is 1000 - 0.1*732 = 926.8 points
 '''
 
 class EnhancedCarRacing(CarRacing):
-    def __init__(self, render_mode=None):
+    def __init__(self, render_mode=None, obstacle_speed_factor=0.2, moving_obstacles=True):
         super().__init__(render_mode=render_mode, continuous=False)
         self.obstacles = []
+        self.obstacle_speed_factor = obstacle_speed_factor
+        self.moving_obstacles = moving_obstacles
         self.weather_condition = 'normal'
         self.previous_position = None
         self.total_distance = 0
         self.time_penalty = 0
         self.car = None  # Initialize car as None
+        self.max_car_speed = 100
+        self.obstacle_speed = self.max_car_speed * self.obstacle_speed_factor
+        self.zoom = 0.1  
+        self.width = 96
+        self.height = 96
+
 
     def reset(self, seed=None, options=None):
         observation, info = super().reset(seed=seed, options=options)
@@ -50,28 +58,32 @@ class EnhancedCarRacing(CarRacing):
         self.obstacles = []
         track_length = len(self.track)
         for _ in range(10):
-            # Choose a random position along the track
             track_pos = np.random.randint(0, track_length)
-            
-            # Get the center of the track at this position
             center_x, center_y = self.track[track_pos][2:4]
+            inner_edge = np.array(self.track[track_pos][0:2])
+            outer_edge = np.array(self.track[track_pos][2:4])
+            track_width = np.linalg.norm(outer_edge - inner_edge)
             
-            # Add some randomness to the position
             angle = np.random.uniform(0, 2*np.pi)
-            radius = np.random.uniform(0, self.track_width * 0.4)  # Keep within track width
+            radius = np.random.uniform(0, track_width * 0.4)
             
             x = center_x + radius * np.cos(angle)
             y = center_y + radius * np.sin(angle)
             
-            self.obstacles.append((x, y, track_pos))
+            self.obstacles.append((x, y, angle))  # Store angle for movement
 
     def is_on_track_position(self, x, y):
         # Convert normalized coordinates to pixel coordinates
         pixel_x = int((x + 1) * self.state.shape[1] / 2)
         pixel_y = int((-y + 1) * self.state.shape[0] / 2)  # Note the negative y here
     
-        # Check if this pixel is on the track (not green)
-        return not np.all(self.state[pixel_y, pixel_x, 1] > 200)
+        # Check if the pixel coordinates are within the bounds of the state array
+        if 0 <= pixel_x < self.state.shape[1] and 0 <= pixel_y < self.state.shape[0]:
+            # Check if this pixel is on the track (not green)
+            return not np.all(self.state[pixel_y, pixel_x, 1] > 200)
+        else:
+            # If the coordinates are out of bounds, consider it off-track
+            return False
 
     def modify_track_features(self):
         self.track_width = np.random.uniform(0.8, 1.2)  # Modify track width
@@ -88,8 +100,8 @@ class EnhancedCarRacing(CarRacing):
         # Get car position
         car_position = self.get_car_position(observation)
         
-        # Calculate distances to obstacles
-        distances = [np.linalg.norm(car_position - obstacle) for obstacle in self.obstacles]
+        # Calculate distances to obstacles (using only x and y coordinates)
+        distances = [np.linalg.norm(car_position - np.array(obstacle[:2])) for obstacle in self.obstacles]
         
         # Apply penalty for being close to obstacles
         obstacle_penalty = sum(1 / (d + 1e-6) for d in distances)  # Add small epsilon to avoid division by zero
@@ -117,42 +129,6 @@ class EnhancedCarRacing(CarRacing):
 
         return observation, reward, terminated, truncated, info
 
-    ''' 
-    def apply_weather_effect(self, action):
-        # For discrete actions:
-        # 0: do nothing, 1: left, 2: right, 3: gas, 4: brake
-        if self.weather_condition == 'rain':
-            # In rain, there's a chance to slip when turning
-            if action in [1, 2]:  # If turning left or right
-                if np.random.random() < 0.2:  # 20% chance to slip
-                    action = 0  # Do nothing instead of turning
-        elif self.weather_condition == 'snow':
-            # In snow, gas and brake are less effective
-            if action == 3:  # If gas
-                if np.random.random() < 0.3:  # 30% chance to reduce effectiveness
-                    action = 0  # Do nothing instead of accelerating
-            elif action == 4:  # If brake
-                if np.random.random() < 0.3:  # 30% chance to reduce effectiveness
-                    action = 0  # Do nothing instead of braking
-        return action
-
-    def apply_weather_effect(self, action):
-        if self.weather_condition == 'rain':
-            # In rain, turning actions are less effective
-            if isinstance(action, np.ndarray):
-                action = np.where(action == 2, 0, action)  # Replace left turn with no action
-                action = np.where(action == 1, 0, action)  # Replace right turn with no action
-            elif action in [1, 2]:
-                action = 0  # Do nothing instead of turning
-        elif self.weather_condition == 'snow':
-            # In snow, gas and brake are less effective
-            if isinstance(action, np.ndarray):
-                action = np.where(action == 3, 0, action)  # Reduce gas effectiveness
-            elif action == 3:
-                if np.random.random() < 0.3:
-                    action = 0  # Do nothing instead of accelerating
-        return action
-    '''
     def apply_weather_effect(self, action):
         if self.weather_condition == 'rain':
             # In rain, turning actions are less effective
@@ -190,22 +166,35 @@ class EnhancedCarRacing(CarRacing):
     
     def update_obstacle_positions(self):
         updated_obstacles = []
-        for x, y, track_pos in self.obstacles:
-            # Find the new position on the track
-            new_track_pos = (track_pos - self.tile_visited_count) % len(self.track)
-            new_center_x, new_center_y = self.track[new_track_pos][2:4]
+        for x, y, angle in self.obstacles:
+            # Move obstacle
+            x += self.obstacle_speed * np.cos(angle)
+            y += self.obstacle_speed * np.sin(angle)
             
-            # Calculate the offset from the center
-            offset_x = x - self.track[track_pos][2]
-            offset_y = y - self.track[track_pos][3]
-            
-            # Apply the offset to the new position
-            new_x = new_center_x + offset_x
-            new_y = new_center_y + offset_y
-            
-            updated_obstacles.append((new_x, new_y, new_track_pos))
+            # Check if obstacle is still on the track
+            if self.is_on_track_position(x, y):
+                updated_obstacles.append((x, y, angle))
+            else:
+                # If off track, create a new obstacle
+                new_obstacle = self.create_single_obstacle()
+                updated_obstacles.append(new_obstacle)
         
         self.obstacles = updated_obstacles
+
+    def create_single_obstacle(self):
+        track_pos = np.random.randint(0, len(self.track))
+        center_x, center_y = self.track[track_pos][2:4]
+        inner_edge = np.array(self.track[track_pos][0:2])
+        outer_edge = np.array(self.track[track_pos][2:4])
+        track_width = np.linalg.norm(outer_edge - inner_edge)
+        
+        angle = np.random.uniform(0, 2*np.pi)
+        radius = np.random.uniform(0, track_width * 0.4)
+        
+        x = center_x + radius * np.cos(angle)
+        y = center_y + radius * np.sin(angle)
+        
+        return (x, y, angle)
 
     def add_obstacles_to_observation(self, observation):
         for x, y, _ in self.obstacles:
@@ -216,8 +205,22 @@ class EnhancedCarRacing(CarRacing):
         return observation
     
     def world_to_pixel(self, x, y):
-        pixel_x = int((x - self.scroll[0]) * self.scale)
-        pixel_y = int((y - self.scroll[1]) * self.scale)
+        if self.car is None:
+            return 0, 0  # Return a default value if car is not initialized
+
+        car_position = self.car.hull.position
+        
+        # Use a default zoom if not available
+        zoom = getattr(self, 'zoom', 6.0)  # Default zoom value of 6.0, adjust if needed
+        
+        # Calculate the offset from the car's position to the center of the viewport
+        offset_x = x - car_position[0]
+        offset_y = y - car_position[1]
+        
+        # Convert world coordinates to pixel coordinates
+        pixel_x = int(offset_x * zoom) + self.width // 2
+        pixel_y = int(offset_y * zoom) + self.height // 2
+        
         return pixel_x, pixel_y
 
     def render(self):
