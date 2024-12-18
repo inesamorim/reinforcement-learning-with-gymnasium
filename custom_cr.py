@@ -48,14 +48,22 @@ class EnhancedCarRacing(CarRacing):
 
     def create_obstacles(self):
         self.obstacles = []
+        track_length = len(self.track)
         for _ in range(10):
-            # Use slightly narrower limits to ensure obstacles are near the track
-            x = np.random.uniform(-0.9, 0.9)
-            y = np.random.uniform(-0.9, 0.9)
+            # Choose a random position along the track
+            track_pos = np.random.randint(0, track_length)
             
-            # Check if the obstacle is on the track
-            if self.is_on_track_position(x, y):
-                self.obstacles.append((x, y))
+            # Get the center of the track at this position
+            center_x, center_y = self.track[track_pos][2:4]
+            
+            # Add some randomness to the position
+            angle = np.random.uniform(0, 2*np.pi)
+            radius = np.random.uniform(0, self.track_width * 0.4)  # Keep within track width
+            
+            x = center_x + radius * np.cos(angle)
+            y = center_y + radius * np.sin(angle)
+            
+            self.obstacles.append((x, y, track_pos))
 
     def is_on_track_position(self, x, y):
         # Convert normalized coordinates to pixel coordinates
@@ -74,6 +82,8 @@ class EnhancedCarRacing(CarRacing):
 
     def step(self, action):
         observation, reward, terminated, truncated, info = super().step(action)
+
+        self.update_obstacle_positions()
 
         # Get car position
         car_position = self.get_car_position(observation)
@@ -177,14 +187,38 @@ class EnhancedCarRacing(CarRacing):
     def get_car_position(self, observation):
         # Simplified: assume the car is at the center bottom of the image
         return np.array([observation.shape[1] / 2, observation.shape[0]])
+    
+    def update_obstacle_positions(self):
+        updated_obstacles = []
+        for x, y, track_pos in self.obstacles:
+            # Find the new position on the track
+            new_track_pos = (track_pos - self.tile_visited_count) % len(self.track)
+            new_center_x, new_center_y = self.track[new_track_pos][2:4]
+            
+            # Calculate the offset from the center
+            offset_x = x - self.track[track_pos][2]
+            offset_y = y - self.track[track_pos][3]
+            
+            # Apply the offset to the new position
+            new_x = new_center_x + offset_x
+            new_y = new_center_y + offset_y
+            
+            updated_obstacles.append((new_x, new_y, new_track_pos))
+        
+        self.obstacles = updated_obstacles
 
     def add_obstacles_to_observation(self, observation):
-        for x, y in self.obstacles:
-            pixel_x = int((x + 1) * observation.shape[1] / 2)
-            pixel_y = int((y + 1) * observation.shape[0] / 2)
+        for x, y, _ in self.obstacles:
+            # Convert world coordinates to pixel coordinates
+            pixel_x, pixel_y = self.world_to_pixel(x, y)
             if 0 <= pixel_x < observation.shape[1] and 0 <= pixel_y < observation.shape[0]:
                 observation[pixel_y-2:pixel_y+3, pixel_x-2:pixel_x+3] = [255, 0, 0]
         return observation
+    
+    def world_to_pixel(self, x, y):
+        pixel_x = int((x - self.scroll[0]) * self.scale)
+        pixel_y = int((y - self.scroll[1]) * self.scale)
+        return pixel_x, pixel_y
 
     def render(self):
         if self.render_mode == "rgb_array":
