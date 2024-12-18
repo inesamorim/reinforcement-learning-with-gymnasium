@@ -111,3 +111,57 @@ def plot_metric(metric_values, metric_name):
     plt.ylabel(metric_name)
     plt.grid()
     plt.show()
+
+
+def plot_mean_rewards(timesteps, results):
+    # Plot mean rewards over timesteps
+    plt.figure(figsize=(10, 6))
+    plt.plot(timesteps, results.mean(axis=1), label="Mean Rewards", color='b')
+    plt.fill_between(timesteps, results.mean(axis=1) - results.std(axis=1),
+                    results.mean(axis=1) + results.std(axis=1), color='b', alpha=0.3, label="Reward Std Dev")
+    plt.xlabel("Timesteps")
+    plt.ylabel("Evaluation Rewards")
+    plt.title("Evaluation Rewards Over Training Timesteps")
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+
+
+def plot_episode_lengths(timesteps, ep_lengths):# Plot episode lengths over timesteps
+    plt.figure(figsize=(10, 6))
+    plt.plot(timesteps, ep_lengths.mean(axis=1), label="Mean Episode Lengths", color='g')
+    plt.fill_between(timesteps, ep_lengths.mean(axis=1) - ep_lengths.std(axis=1),
+                    ep_lengths.mean(axis=1) + ep_lengths.std(axis=1), color='g', alpha=0.3, label="Episode Length Std Dev")
+    plt.xlabel("Timesteps")
+    plt.ylabel("Episode Length")
+    plt.title("Evaluation Episode Lengths Over Training Timesteps")
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+
+def compare_rewards(timesteps_baseline, timesteps_custom, results_baseline, results_custom):
+    # Compare mean rewards
+    plt.figure(figsize=(10, 6))
+    plt.plot(timesteps_baseline, results_baseline.mean(axis=1), label="Baseline Model", color='purple')
+    plt.plot(timesteps_custom, results_custom.mean(axis=1), label="Custom Model", color='pink')
+    plt.xlabel("Timesteps")
+    plt.ylabel("Evaluation Rewards")
+    plt.yscale('symlog')
+    plt.title("Comparison of Mean Evaluation Rewards")
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+def compare_episode_lengths(timesteps_baseline, timesteps_custom, ep_lengths_baseline, ep_lengths_custom):
+    # Compare mean episode lengths
+    plt.figure(figsize=(10, 6))
+    plt.plot(timesteps_baseline, ep_lengths_baseline.mean(axis=1), label="Baseline Model", color='purple')
+    plt.plot(timesteps_custom, ep_lengths_custom.mean(axis=1), label="Custom Model", color='pink')
+    plt.xlabel("Timesteps")
+    plt.ylabel("Episode Length")
+    plt.title("Comparison of Mean Evaluation Episode Lengths")
+    plt.legend()
+    plt.grid()
+    plt.show()
