@@ -20,7 +20,7 @@ Ex: finished in 732 frames, reward is 1000 - 0.1*732 = 926.8 points
 
 class EnhancedCarRacing(CarRacing):
     def __init__(self, render_mode=None):
-        super().__init__(render_mode=render_mode)
+        super().__init__(render_mode=render_mode, continuous=False)
         self.obstacles = []
         self.weather_condition = 'normal'
         self.previous_position = None
