@@ -1,6 +1,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+#=============================== CALCULATIONS ===============================
+def calculate_track_length(env):
+    """
+    Calculates the total length of the track.
+    """
+    return sum(np.linalg.norm(np.diff(np.array(env.unwrapped.track), axis=0), axis=1))
+
+def calculate_lap_time(env):
+    """
+    Calculates the time taken to complete one lap.
+    """
+    return env.unwrapped.episode_steps / env.unwrapped.track_length
+
 def track_coverage(env, total_track_length):
     """
     Calculates the percentage of the track covered.
@@ -18,6 +31,9 @@ def record_agent_dynamics(env, steering_angles, speeds):
     speeds.append(speed)
 
     return steering_angles, speeds
+
+
+#=============================== MONITORING ===============================
 
 def detect_collision(env, colisions_count):
     """
@@ -37,6 +53,53 @@ def record_reward_components(env, reward, reward_components):
     reward_components["safety"].append(reward.get("safety", 0))
 
     return reward_components
+
+#=============================== PLOTTING ===============================
+
+def plot_rewards(episode_rewards, reward_components):
+    plt.figure(figsize=(12, 6))
+    plt.subplot(1, 2, 1)
+    plt.plot(episode_rewards)
+    plt.title("Episode Rewards")
+    plt.xlabel("Episode")
+    plt.ylabel("Reward")
+    plt.grid()
+
+    plt.subplot(1, 2, 2)
+    plt.bar(reward_components.keys(), reward_components.values())
+    plt.title("Reward Components")
+    plt.xlabel("Component")
+    plt.ylabel("Value")
+    plt.grid()
+    plt.show()
+
+def plot_metrics(episode_lengths, track_coverages, lap_times):
+    """
+    Plot the metrics over episodes.
+    """
+    plt.figure(figsize=(12, 6))
+    plt.subplot(2, 2, 1)
+    plt.plot(episode_lengths)
+    plt.title("Episode Lengths")
+    plt.xlabel("Episode")
+    plt.ylabel("Length")
+    plt.grid()
+
+    plt.subplot(2, 2, 2)
+    plt.plot(track_coverages)
+    plt.title("Track Coverages")
+    plt.xlabel("Episode")
+    plt.ylabel("Coverage (%)")
+    plt.grid()
+
+    plt.subplot(2, 2, 3)
+    plt.plot(lap_times)
+    plt.title("Lap Times")
+    plt.xlabel("Episode")
+    plt.ylabel("Time (s)")
+    plt.grid()
+
+    plt.subplot(2, 2, 4)
     
 def plot_metric(metric_values, metric_name):
     """
