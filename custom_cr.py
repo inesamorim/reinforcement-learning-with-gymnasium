@@ -20,7 +20,7 @@ Ex: finished in 732 frames, reward is 1000 - 0.1*732 = 926.8 points
 
 class EnhancedCarRacing(CarRacing):
     def __init__(self, render_mode=None):
-        super().__init__(render_mode=render_mode)
+        super().__init__(render_mode=render_mode, continuous=False)
         self.obstacles = []
         self.weather_condition = 'normal'
         self.previous_position = None
@@ -107,6 +107,7 @@ class EnhancedCarRacing(CarRacing):
 
         return observation, reward, terminated, truncated, info
 
+    ''' 
     def apply_weather_effect(self, action):
         # For discrete actions:
         # 0: do nothing, 1: left, 2: right, 3: gas, 4: brake
@@ -124,6 +125,41 @@ class EnhancedCarRacing(CarRacing):
                 if np.random.random() < 0.3:  # 30% chance to reduce effectiveness
                     action = 0  # Do nothing instead of braking
         return action
+
+    def apply_weather_effect(self, action):
+        if self.weather_condition == 'rain':
+            # In rain, turning actions are less effective
+            if isinstance(action, np.ndarray):
+                action = np.where(action == 2, 0, action)  # Replace left turn with no action
+                action = np.where(action == 1, 0, action)  # Replace right turn with no action
+            elif action in [1, 2]:
+                action = 0  # Do nothing instead of turning
+        elif self.weather_condition == 'snow':
+            # In snow, gas and brake are less effective
+            if isinstance(action, np.ndarray):
+                action = np.where(action == 3, 0, action)  # Reduce gas effectiveness
+            elif action == 3:
+                if np.random.random() < 0.3:
+                    action = 0  # Do nothing instead of accelerating
+        return action
+    '''
+    def apply_weather_effect(self, action):
+        if self.weather_condition == 'rain':
+            # In rain, turning actions are less effective
+            if isinstance(action, np.ndarray):
+                action = np.where(action == 2, 0, action)  # Replace left turn with no action
+                action = np.where(action == 1, 0, action)  # Replace right turn with no action
+            elif action in [1, 2]:
+                action = 0  # Do nothing instead of turning
+        elif self.weather_condition == 'snow':
+            # In snow, gas and brake are less effective
+            if isinstance(action, np.ndarray):
+                action = np.where(action == 3, 0, action)  # Reduce gas effectiveness
+            elif action == 3:
+                if np.random.random() < 0.3:
+                    action = 0  # Do nothing instead of accelerating
+        return action
+
 
     def is_on_track(self, observation):
         # Simplified check: assuming green represents off-track
