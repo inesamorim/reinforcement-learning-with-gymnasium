@@ -154,6 +154,20 @@ def compare_rewards(timesteps_baseline, timesteps_custom, results_baseline, resu
     plt.grid()
     plt.show()
 
+def compare_rewards_by_algorithm(timesteps_DQN, timesteps_PPO, results_DQN, results_PPO):
+    # Compare mean rewards
+    plt.figure(figsize=(10, 6))
+    plt.plot(timesteps_DQN, results_DQN.mean(axis=1), label="DQN Model", color='purple')
+    plt.plot(timesteps_PPO, results_PPO.mean(axis=1), label="PPO Model", color='pink')
+    plt.xlabel("Timesteps")
+    plt.ylabel("Evaluation Rewards")
+    plt.yscale('symlog')
+    plt.title("Comparison of Mean Evaluation Rewards")
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+
 def compare_episode_lengths(timesteps_baseline, timesteps_custom, ep_lengths_baseline, ep_lengths_custom):
     # Compare mean episode lengths
     plt.figure(figsize=(10, 6))
@@ -165,3 +179,63 @@ def compare_episode_lengths(timesteps_baseline, timesteps_custom, ep_lengths_bas
     plt.legend()
     plt.grid()
     plt.show()
+
+
+def compare_episode_lengths_by_algorithm(timesteps_DQN, timesteps_PPO, ep_lengths_DQN, ep_lengths_PPO):
+    # Compare mean episode lengths
+    plt.figure(figsize=(10, 6))
+    plt.plot(timesteps_DQN, ep_lengths_DQN.mean(axis=1), label="DQN Model", color='purple')
+    plt.plot(timesteps_PPO, ep_lengths_PPO.mean(axis=1), label="PPO Model", color='pink')
+    plt.xlabel("Timesteps")
+    plt.ylabel("Episode Length")
+    plt.title("Comparison of Mean Evaluation Episode Lengths")
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+
+
+def plot_noise_rewards_comparison(model1_rewards, model2_rewards, model1_label='Model 1', model2_label='Model 2'):
+    """
+    Plots a bar graph comparing the mean noise rewards of two models with standard deviation as error bars.
+
+    Args:
+        model1_rewards (list or np.array): Noise rewards for model 1.
+        model2_rewards (list or np.array): Noise rewards for model 2.
+        model1_label (str): Label for model 1.
+        model2_label (str): Label for model 2.
+
+    Returns:
+        None. Displays a bar chart comparing the mean and standard deviation of noise rewards.
+    """
+    # Compute means and standard deviations
+    model1_mean = np.mean(model1_rewards)
+    model1_std = np.std(model1_rewards)
+
+    model2_mean = np.mean(model2_rewards)
+    model2_std = np.std(model2_rewards)
+
+    # Plot bar graph
+    labels = [model1_label, model2_label]
+    means = [model1_mean, model2_mean]
+    stds = [model1_std, model2_std]
+
+    x = np.arange(len(labels))
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    bars = ax.bar(x, means, yerr=stds, capsize=10, color=['#1f77b4', '#ff7f0e'], alpha=0.7)
+
+    # Add labels
+    ax.set_ylabel('Mean Noise Rewards')
+    ax.set_title('Comparison of Noise Rewards Between Models')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+
+    # Add standard deviation line above bars
+    for i, bar in enumerate(bars):
+        plt.plot([bar.get_x(), bar.get_x() + bar.get_width()], [means[i] + stds[i]] * 2, color='black', linestyle='--')
+
+    plt.tight_layout()
+    plt.show()
+
+
