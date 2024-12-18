@@ -56,7 +56,7 @@ def record_reward_components(env, reward, reward_components):
 
 #=============================== PLOTTING ===============================
 
-def plot_rewards(env, episode_rewards, reward_components):
+def plot_rewards(episode_rewards, reward_components):
     plt.figure(figsize=(12, 6))
     plt.subplot(1, 2, 1)
     plt.plot(episode_rewards)
@@ -73,7 +73,7 @@ def plot_rewards(env, episode_rewards, reward_components):
     plt.grid()
     plt.show()
 
-def plot_metrics(env, episode_lengths, track_coverages, lap_times, colisions_count, reward_components):
+def plot_metrics(episode_lengths, track_coverages, lap_times):
     """
     Plot the metrics over episodes.
     """
