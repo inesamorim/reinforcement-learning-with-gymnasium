@@ -33,6 +33,82 @@ def record_agent_dynamics(env, steering_angles, speeds):
     return steering_angles, speeds
 
 
+def evaluate_robustness(model, env, num_episodes=10, noise_std=0.1, perturbation_prob=0.1):
+    """
+    Evaluate the robustness of a trained model under various challenging conditions.
+
+    This function tests the model's ability to handle noisy observations, random perturbations, 
+    and diverse initial states in the environment. Results include performance metrics such as 
+    mean rewards and standard deviations under each condition.
+
+    Args:
+        model (BaseAlgorithm): ThKeysView(NpzFile './best_model/best_model_2.1.1.zip' with keys: data, pytorch_variables.pth, policy.pth, policy.optimizer.pth, _stable_baselines3_version...)e trained model to evaluate. Should support `.predict()` for action selection.
+        env (gym.Env): The environment in which the model will be tested.
+        num_episodes (int, optional): The number of episodes to run for each robustness scenario. Defaults to 10.
+        noise_std (float, optional): Standard deviation of Gaussian noise added to observations. Defaults to 0.1.
+        perturbation_prob (float, optional): Probability of applying random perturbations to observations. Defaults to 0.1.
+
+    Returns:
+        dict: A dictionary with keys:
+            - "noise_rewards": List of total rewards for episodes with noisy observations.
+            - "perturbation_rewards": List of total rewards for episodes with random perturbations.
+            - "initial_state_rewards": List of total rewards for episodes starting from diverse initial states.
+        Each list includes rewards from `num_episodes` episodes.
+    """
+    results = {
+        "noise_rewards": [],
+        "perturbation_rewards": []
+    }
+    
+    # Evaluate robustness to observation noise
+    print("Evaluating robustness to observation noise...")
+    for _ in range(num_episodes):
+        print(f"Running episode {_}")
+        obs, _ = env.reset()
+        #obs = env.reset()
+        total_reward = 0
+        done = False
+        truncate = False
+        while not done and not truncate:
+            # Add Gaussian noise to observation
+            noisy_obs = obs + np.random.normal(0, noise_std, obs.shape)
+            action = model.predict(noisy_obs, deterministic=True)[0]
+            obs, reward, done, truncate, _ = env.step(action)
+            #obs, reward, done, _ = env.step(action)
+            total_reward += reward
+        results["noise_rewards"].append(total_reward)
+        print(f"Perturbation episode: Total Reward = {total_reward}")  # For debugging 
+
+    # Evaluate robustness to environment perturbations
+    print("Evaluating robustness to environment perturbations...")
+    for _ in range(num_episodes):
+        print(f"Running episode {_}")
+        obs, _ = env.reset()
+        #obs = env.reset()
+        total_reward = 0
+        done = False
+        truncate = False
+        while not done and truncate:
+            action = model.predict(obs, deterministic=True)[0]
+            
+            # Apply random perturbations
+            if np.random.random() < perturbation_prob:
+                obs = obs + np.random.uniform(-0.5, 0.5, obs.shape)
+                
+            obs, reward, done, truncate, _ = env.step(action)
+            #obs, reward, done, _ = env.step(action)
+            total_reward += reward
+        print(f"Perturbation episode: Total Reward = {total_reward}")  # For debugging purposes only, remove in production code.  # Evaluate robustness to environment perturb
+        results["perturbation_rewards"].append(total_reward)
+
+    # Compute and return mean and standard deviation for all scenarios
+    for key in results:
+        rewards = np.array(results[key])
+        print(f"{key}: Mean = {rewards.mean()}, Std Dev = {rewards.std()}")
+    return results
+
+
+
 #=============================== MONITORING ===============================
 
 def detect_collision(env, colisions_count):
@@ -241,3 +317,45 @@ def plot_noise_rewards_comparison(model1_rewards, model2_rewards, model1_label='
     plt.show()
 
 
+def plot_perturbation_rewards_comparison(model1_rewards, model2_rewards, model1_label='Model 1', model2_label='Model 2'):
+    """
+    Plots a bar graph comparing the mean perturbation rewards of two models with standard deviation as error bars.
+
+    Args:
+        model1_rewards (list or np.array): Perturbation rewards for model 1.
+        model2_rewards (list or np.array): Perturbation rewards for model 2.
+        model1_label (str): Label for model 1.
+        model2_label (str): Label for model 2.
+
+    Returns:
+        None. Displays a bar chart comparing the mean and standard deviation of perturbation rewards.
+    """
+    # Compute means and standard deviations
+    model1_mean = np.mean(model1_rewards)
+    model1_std = np.std(model1_rewards)
+
+    model2_mean = np.mean(model2_rewards)
+    model2_std = np.std(model2_rewards)
+
+    # Plot bar graph
+    labels = [model1_label, model2_label]
+    means = [model1_mean, model2_mean]
+    stds = [model1_std, model2_std]
+
+    x = np.arange(len(labels))
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    bars = ax.bar(x, means, yerr=stds, capsize=10, color=['#1f77b4', '#ff7f0e'], alpha=0.7)
+
+    # Add labels
+    ax.set_ylabel('Mean Perturbation Rewards')
+    ax.set_title('Comparison of Perturbation Rewards Between Models')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+
+    # Add standard deviation line above bars
+    for i, bar in enumerate(bars):
+        plt.plot([bar.get_x(), bar.get_x() + bar.get_width()], [means[i] + stds[i]] * 2, color='black', linestyle='--')
+
+    plt.tight_layout()
+    plt.show()
