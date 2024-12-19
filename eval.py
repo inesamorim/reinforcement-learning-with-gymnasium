@@ -349,9 +349,5 @@ def plot_perturbation_rewards_comparison(model1_rewards, model2_rewards, model1_
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
 
-    # Add standard deviation line above bars
-    for i, bar in enumerate(bars):
-        plt.plot([bar.get_x(), bar.get_x() + bar.get_width()], [means[i] + stds[i]] * 2, color='black', linestyle='--')
-
     plt.tight_layout()
     plt.show()
