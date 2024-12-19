@@ -141,27 +141,29 @@ def plot_episode_lengths(timesteps, ep_lengths):# Plot episode lengths over time
     plt.show()
 
 
-def compare_rewards(timesteps_baseline, timesteps_custom, results_baseline, results_custom):
+def compare_rewards(timesteps_baseline, timesteps_custom, results_baseline, results_custom, scale=False):
     # Compare mean rewards
     plt.figure(figsize=(10, 6))
     plt.plot(timesteps_baseline, results_baseline.mean(axis=1), label="Baseline Model", color='purple')
     plt.plot(timesteps_custom, results_custom.mean(axis=1), label="Custom Model", color='pink')
     plt.xlabel("Timesteps")
     plt.ylabel("Evaluation Rewards")
-    plt.yscale('symlog')
+    if scale:
+        plt.yscale('symlog')
     plt.title("Comparison of Mean Evaluation Rewards")
     plt.legend()
     plt.grid()
     plt.show()
 
-def compare_rewards_by_algorithm(timesteps_DQN, timesteps_PPO, results_DQN, results_PPO):
+def compare_rewards_by_algorithm(timesteps_DQN, timesteps_PPO, results_DQN, results_PPO, scale=False):
     # Compare mean rewards
     plt.figure(figsize=(10, 6))
     plt.plot(timesteps_DQN, results_DQN.mean(axis=1), label="DQN Model", color='purple')
     plt.plot(timesteps_PPO, results_PPO.mean(axis=1), label="PPO Model", color='pink')
     plt.xlabel("Timesteps")
     plt.ylabel("Evaluation Rewards")
-    plt.yscale('symlog')
+    if scale:
+        plt.yscale('symlog')
     plt.title("Comparison of Mean Evaluation Rewards")
     plt.legend()
     plt.grid()
