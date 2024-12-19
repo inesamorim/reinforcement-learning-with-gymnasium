@@ -153,11 +153,11 @@ class EnhancedCarRacing(CarRacing):
             polygon.append((px, py))
 
         # Create a static body for the obstacle
-        self.world.CreateStaticBody(
-            position=(x, y),
-            shapes=polygonShape(vertices=[(p[0]-x, p[1]-y) for p in polygon]),
-            userData='obstacle'
-        )
+        # self.world.CreateStaticBody(
+        #     position=(x, y),
+        #     shapes=polygonShape(vertices=[(p[0]-x, p[1]-y) for p in polygon]),
+        #     userData='obstacle'
+        # )
 
         return polygon
 
